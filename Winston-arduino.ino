@@ -1,91 +1,91 @@
+
+/*
+ * Motorcontrol code for Winston animatronic.
+ * 
+*/
+
 #include <Servo.h>
+
 int Musicread = 13;
 int Music;
+
 Servo Eyes;
-Servo Nose;
-Servo Mouth;
-int pos = 10;
-int pos2 = 20;
-int pos3 = 10;
+Servo Upper;
+Servo Lower;
+int ol1 = 0;
+int cl1 = 70;
+int ol2 = 45;
+int cl2 = 0;
+int pos1 = ol1;
+int pos2 = ol2;
+int sd = 100; //delay in millisec to give a servo time to complete movement
+long int previousMillis = 0;
+long int interval = 15000; // set eye blink timer in milliseconds
+#define Servo1Pin 10
+#define Servo2Pin 6
+#define Servo3Pin 5  
 
-long previousMillis = 0;
-long interval = 15000; // timer is set to 15 second intervals
-#define Servo1Pin 12
-#define Servo2Pin 11
-#define Servo3Pin 10  
-
-void setup()
-{
+void setup(){
+  // Servo setup
   pinMode(13, INPUT);
   digitalWrite(13, LOW);
   Eyes.attach(Servo1Pin);
-  Nose.attach(Servo2Pin);
-  Mouth.attach(Servo3Pin);
-  Eyes.write(0);
-  Nose.write(40);
-  Mouth.write(40);
-  Eyes.detach();
-  Nose.detach();
-  Mouth.detach();
-}
+  Upper.attach(Servo2Pin);
+  Lower.attach(Servo3Pin);
+  Eyes.write(pos1);
+  Upper.write(pos2);
+  Lower.write(pos2);
+  }
 
-void loop()
-{
+void loop(){
   //Set timer for eyeblinks (every 15 seconds)
   unsigned long currentMillis = millis();
   if(currentMillis - previousMillis > interval){
     previousMillis = currentMillis;
-    Eyes.attach(Servo1Pin);
     eyeBlink();
-    Eyes.detach();
   } 
+  
   //Read audio value from analog pin.
-  //If the value equals 1, run the small movement talk script
-  //If the value is greater than 1, rin the large movement talk script
-  //Otherwise, set everything back to its original value.
+  //If the value is greater than 1, run the large movement talk script
   Music = digitalRead(Musicread);
   delay(10);
   if (Music == 1){
-    Nose.attach(Servo2Pin);
-    Mouth.attach(Servo3Pin);
     talk();
-    delay(10);
-  } else {
-    Nose.write(40);
-    Mouth.write(40);
-    delay(10);
-    Nose.detach();
-    Mouth.detach();
+    delay(sd);
   }
 }
 
-//Large movement talk script (opens mouth a lot)
+// Large movement talk script (opens mouth a lot)
 void talk()
 {
-   for(pos = 40; pos > 5; pos -= 5)  // goes from 90 degrees to 50 degrees 
-  {                                  // in steps of 1 degree 
-    Nose.write(pos);              // tell servo to go to position in variable 'pos' 
-    Mouth.write(pos);
-    delay(10);                       // waits 15ms for the servo to reach the position 
+   for(pos2 = ol2; pos2 >= cl2; pos2 -= 5) // goes from ol2 to cl2
+  {                                     // in steps of 1 degree 
+    Upper.write(pos2);                  // tell upper mouth servo to go to position 'pos2' 
+    Lower.write(pos2);                  // tell lower mouth servo to go to position 'pos2'
+    delay(10);
   }
-  for(pos = 5; pos < 40; pos += 5)     // goes from 180 degrees to 0 degrees 
-  {                                
-    Nose.write(pos);              // tell servo to go to position in variable 'pos' 
-    Mouth.write(pos);
-    delay(10);                       // waits 15ms for the servo to reach the position 
-  } 
+  delay(sd);
+  for(pos2 = cl2; pos2 <= ol2; pos2 += 5)  // goes from cl2 degrees to ol2
+  {                                     // in steps of 1 degree
+    Upper.write(pos2);                  // tell upper mouth servo to go to position 'pos2' 
+    Lower.write(pos2);                  // tell lower mouth servo to go to position 'pos2'
+    delay(10);
+  }
+  delay(sd);                          // wait for the servo to reach the final position 
 }
 //Eye blink script
 void eyeBlink()
 {
-  for(pos3 = 0; pos3 < 70; pos3 += 10)  // goes from 0 degrees to 180 degrees 
-  {                                  // in steps of 1 degree 
-    Eyes.write(pos3);              // tell servo to go to position in variable 'pos' 
-    delay(15);                       // waits 15ms for the servo to reach the position 
-  } 
-  for(pos3 = 70; pos3 >= 0 ; pos3 -= 10)     // goes from 180 degrees to 0 degrees 
+  for(pos1 = ol1; pos1 <= cl1; pos1 += 5)
+  {
+    Eyes.write(pos1);
+    delay(10);
+  }
+  delay(sd);
+  for(pos1 = cl1; pos1 >= ol1 ; pos1 -= 5)
   {                                
-    Eyes.write(pos3);              // tell servo to go to position in variable 'pos' 
-    delay(15);                       // waits 15ms for the servo to reach the position 
-  } 
+    Eyes.write(pos1);
+    delay(10);
+  }
+  delay(sd);
 }
