@@ -21,14 +21,12 @@ int pos2 = ol2;
 int sd = 100; //delay in millisec to give a servo time to complete movement
 long int previousMillis = 0;
 long int interval = 15000; // set eye blink timer in milliseconds
-#define Servo1Pin 10
-#define Servo2Pin 6
-#define Servo3Pin 5  
+#define Servo1Pin 0
+#define Servo2Pin 1
+#define Servo3Pin 2  
 
 void setup(){
   // Servo setup
-  pinMode(13, INPUT);
-  digitalWrite(13, LOW);
   Eyes.attach(Servo1Pin);
   Upper.attach(Servo2Pin);
   Lower.attach(Servo3Pin);
@@ -47,12 +45,6 @@ void loop(){
   
   //Read audio value from analog pin.
   //If the value is greater than 1, run the large movement talk script
-  Music = digitalRead(Musicread);
-  delay(10);
-  if (Music == 1){
-    talk();
-    delay(sd);
-  }
 }
 
 // Large movement talk script (opens mouth a lot)
