@@ -1,83 +1,123 @@
 
 /*
- * Motorcontrol code for Winston animatronic.
- * 
+   Motorcontrol code for Winston animatronic.
+
 */
 
 #include <Servo.h>
+#include <Adafruit_DotStar.h>
+#define NUMPIXELS 1
+#define DATAPIN 7
+#define CLOCKPIN 8
 
-int Musicread = 13;
-int Music;
+Adafruit_DotStar strip = Adafruit_DotStar(
+  NUMPIXELS, DATAPIN, CLOCKPIN, DOTSTAR_BGR);
+
+String inputString = "";
 
 Servo Eyes;
-Servo Upper;
-Servo Lower;
-int ol1 = 0;
-int cl1 = 70;
-int ol2 = 45;
-int cl2 = 0;
-int pos1 = ol1;
-int pos2 = ol2;
-int sd = 100; //delay in millisec to give a servo time to complete movement
-long int previousMillis = 0;
-long int interval = 15000; // set eye blink timer in milliseconds
+Servo Nose;
+Servo Mouth;
+int openeyes = 0;
+int closedeyes = 70;
+int openmouth = 0;
+int closedmouth = 45;
+int eyeposition = openeyes;
+int mouthposition = closedmouth;
+int oldmouthposition = mouthposition;
+int number_of_blinks = 0;
+int sd = 10; //delay in millisec to give a servo time to complete movement
 #define Servo1Pin 0
 #define Servo2Pin 1
-#define Servo3Pin 2  
+#define Servo3Pin 2
+long int previousMillis = 0;
+long int interval = 15000; // set eye blink timer in milliseconds
 
-void setup(){
+void setup() {
+  inputString.reserve(200);
+  strip.begin();
+  strip.show();
   // Servo setup
   Eyes.attach(Servo1Pin);
-  Upper.attach(Servo2Pin);
-  Lower.attach(Servo3Pin);
-  Eyes.write(pos1);
-  Upper.write(pos2);
-  Lower.write(pos2);
-  }
+  Nose.attach(Servo2Pin);
+  Mouth.attach(Servo3Pin);
+  Eyes.write(closedeyes);
+  Eyes.write(openeyes);
+  Nose.write(openmouth);
+  Mouth.write(openmouth);
+  Nose.write(closedmouth);
+  Mouth.write(closedmouth);
 
-void loop(){
-  //Set timer for eyeblinks (every 15 seconds)
-  unsigned long currentMillis = millis();
-  if(currentMillis - previousMillis > interval){
-    previousMillis = currentMillis;
-    eyeBlink();
-  } 
-  
-  //Read audio value from analog pin.
-  //If the value is greater than 1, run the large movement talk script
+  Serial1.begin(9600);
+  while (!Serial1) {
+    ; // wait
+  }
 }
 
-// Large movement talk script (opens mouth a lot)
-void talk()
-{
-   for(pos2 = ol2; pos2 >= cl2; pos2 -= 5) // goes from ol2 to cl2
-  {                                     // in steps of 1 degree 
-    Upper.write(pos2);                  // tell upper mouth servo to go to position 'pos2' 
-    Lower.write(pos2);                  // tell lower mouth servo to go to position 'pos2'
-    delay(10);
-  }
-  delay(sd);
-  for(pos2 = cl2; pos2 <= ol2; pos2 += 5)  // goes from cl2 degrees to ol2
-  {                                     // in steps of 1 degree
-    Upper.write(pos2);                  // tell upper mouth servo to go to position 'pos2' 
-    Lower.write(pos2);                  // tell lower mouth servo to go to position 'pos2'
-    delay(10);
-  }
-  delay(sd);                          // wait for the servo to reach the final position 
+void loop() {
+  action0();
+  action1();
+  action2();
+  action3();
 }
-//Eye blink script
-void eyeBlink()
-{
-  for(pos1 = ol1; pos1 <= cl1; pos1 += 5)
-  {
-    Eyes.write(pos1);
-    delay(10);
+
+void action0() {
+  if (Serial1.available()) {
+    inputString = Serial1.readStringUntil('\n');
+    Serial.println(inputString);
   }
-  delay(sd);
-  for(pos1 = cl1; pos1 >= ol1 ; pos1 -= 5)
-  {                                
-    Eyes.write(pos1);
-    delay(10);
+}
+
+void action1() {
+  if (inputString.equals("system.version")) {
+    Serial1.println("Command: system.version");
+    inputString = "";
   }
-  delay(sd);
+}
+
+void action2() {
+  if (inputString.equals("mouth.viseme=0")) {
+    oldmouthposition = mouthposition;
+    talk(0);
+    inputString = "";
+  }
+  else if ((inputString.equals("mouth.viseme=1")) || (inputString.equals("mouth.viseme=4"))) {
+    oldmouthposition = mouthposition;
+    talk(45);
+    inputString = "";
+  }
+  else if ((inputString.equals("mouth.viseme=2")) || (inputString.equals("mouth.viseme=5"))) {
+    oldmouthposition = mouthposition;
+    talk(15);
+    inputString = "";
+  }
+  else if ((inputString.equals("mouth.viseme=3")) || (inputString.equals("mouth.viseme=6"))) {
+    oldmouthposition = mouthposition;
+    talk(30);
+    inputString = "";
+  }
+  else if (inputString.equals("mouth.reset")) {
+    oldmouthposition = mouthposition;
+    talk(closedmouth);
+    inputString = "";
+  }
+}
+
+void action3() {
+  if (inputString.startsWith("eyes.blink")) {
+    eyeBlink(closedeyes);
+    eyeBlink(openeyes);
+    inputString = "";
+  }
+}
+
+void talk(int mouthposition) {
+  Nose.write(mouthposition);
+  Mouth.write(mouthposition);
+  delay(abs(mouthposition - oldmouthposition) * (sd / 5));
+}
+
+void eyeBlink(int eyeposition) {
+  Eyes.write(eyeposition);
+  delay(100);
 }
